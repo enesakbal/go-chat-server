@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql
+    container_name: go-chat-server-mysql-container
+    networks:
+      - app-network
+    ports:
+      - "3306:3306"
+    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql
+    env_file:
+      - secrets/.env.development
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 1s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-chat-server-app-container
+    networks:
+      - app-network
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/go-chat-server
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - secrets/.env.development
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge
